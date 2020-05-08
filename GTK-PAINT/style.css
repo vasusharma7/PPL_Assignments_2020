@@ -1,0 +1,12 @@
+*{
+    /* background-image: url("splash.bmp"); */
+    background-color: white;
+    background-size: cover;
+
+}
+
+button{
+    color:black;
+    background-color: white;
+
+}
