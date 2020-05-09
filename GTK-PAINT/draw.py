@@ -10,16 +10,63 @@ class MouseButtons:
 
 	LEFT_BUTTON = 1
 	RIGHT_BUTTON = 3
+class Brush():
+    def __init__(self, width, rgba_color):
+        self.width = width
+        self.rgba_color = rgba_color
+        self.stroke = []
+
+    def add_point(self, point):
+        self.stroke.append(point)
+
+class colorPicker(Gtk.Window):
+	def __init__(self):
+		window = Gtk.Window()
+		self.color = Gdk.RGBA(red=1, green=1, blue=1, alpha=1)
+		window.connect("destroy", Gtk.main_quit)
+
+		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		window.add(box)
+		self.window = window
+
+		self.colorchooser = Gtk.ColorChooserWidget(show_editor=True)
+		box.add(self.colorchooser)
+	
+		# self.entry = Gtk.Entry(text='0.5, 0.5, 0.5, 1.0')
+		# box.add(self.entry)
+		button = Gtk.Button(label="Select Color")
+		button.connect("clicked", self.on_button_clicked)
+		box.add(button)
+
+	def on_button_clicked(self,button):
+		print(self.colorchooser.get_rgba())
+		# values = [float(v) for v in self.entry.get_text().split(',')]
+		# self.colorchooser.set_rgba(Gdk.RGBA(*values))
+		self.color = self.colorchooser.get_rgba()
+		self.callback(self.color)
+		self.window.hide()
+		# self.colorchooser.set_property("show-editor", True)
+
+	def action(self,function):
+		self.callback = function
+		self.window.show_all()
 
 class Options(Gtk.Window):
 	def __init__(self):
 		Gtk.Window.__init__(self, title="Button Demo")
+		self.colors = colorPicker()
 		self.set_border_width(10)
 		self.function = 0
+		self.rgba = self.colors.color
 		vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
 		hbox = Gtk.Box(spacing=6)
 		self.add(vbox)
 		self.entry = Gtk.Entry()    
+
+		button = Gtk.Button.new_with_label("Brush")
+		button.connect("clicked", self.brush)
+		hbox.pack_start(button, True, True, 0)
+
 		button = Gtk.Button.new_with_label("Line")
 		button.connect("clicked", self.line)
 		hbox.pack_start(button, True, True, 0)
@@ -36,17 +83,29 @@ class Options(Gtk.Window):
 		button.connect("clicked", self.on_close_clicked)
 		hbox.pack_start(button, True, True, 0)
 
-		button = Gtk.Button.new_with_mnemonic("Get")
-		button.connect("clicked", self.on_text_entry)
-		hbox.pack_start(button, True, True, 0)
+		# button = Gtk.Button.new_with_mnemonic("Get")
+		# button.connect("clicked", self.on_text_entry)
+		# hbox.pack_start(button, True, True, 0)
 
+		button = Gtk.Button.new_with_mnemonic("Color")
+		button.connect("clicked", self.openColorsPallete)
+		hbox.pack_start(button, True, True, 0)
 		
 		vbox.pack_start(hbox, True, True, 0)
 		# vbox.pack_start(self.entry, True, True, 0)
 
+	def openColorsPallete(self,button):
+		self.colors.action(self.setColor);
+	
+	def setColor(self,color):
+		self.rgba = color
+
+	def brush(self, button):
+		self.function = 0
+		print(self.function)
 
 	def line(self, button):
-		self.function = 0
+		self.function = 1
 		print(self.function)
 
 	def on_text_entry(self, button):
@@ -54,16 +113,17 @@ class Options(Gtk.Window):
 
 
 	def circle(self, button):
-		self.function = 1
+		self.function = 2
 		print(self.function)
 
 	def rectangle(self, button):
-		self.function = 2
+		self.function = 3
 		print(self.function)
 
 	def on_close_clicked(self, button):
 		print("Closing application")
 		Gtk.main_quit()
+
 		
 class InputCircle(Gtk.Window):
 	def __init__(self):
@@ -122,13 +182,6 @@ class InputCircle(Gtk.Window):
 		hbox.pack_start(button, True, True, 0)
 
 
-		# self.w = 0
-		# self.cr = 0
-		# self.e = 0
-		# self.darea = 0
-		# self.img = 0
-
-
 	def action(self,w,cr,circle):
 		self.trigger = circle
 		self.w = w
@@ -185,19 +238,25 @@ class InputRectangle(Gtk.Window):
 
 
 
+
 class Paint(Gtk.Window):
 	def __init__(self):
 		super(Paint, self).__init__()
-		self.functions_dict = {0:self.line_draw,1:self.draw_circle,1:self.draw_rectangle}
-		self.init_ui() ; self.win = Options() ; self.win.connect("destroy", Gtk.main_quit) ; self.win.show_all()
-		self.inpC = InputCircle() ; self.inpC.connect("destroy", Gtk.main_quit) ;
-		self.inpR = InputRectangle() ; self.inpR.connect("destroy", Gtk.main_quit) ;
+		self.functions_dict = {0:self.on_draw,1:self.line_draw,2:self.draw_circle,3:self.draw_rectangle}
+		self.init_ui()
+		self.win = Options()
+		self.win.connect("destroy", Gtk.main_quit)
+		self.win.show_all()
+		self.inpC = InputCircle() ; self.inpC.connect("destroy", Gtk.main_quit)
+		self.inpR = InputRectangle() ; self.inpR.connect("destroy", Gtk.main_quit)
+		self.brushes = []
+
 
 
 	def init_ui(self):
 		self.darea = Gtk.DrawingArea()
 		self.trigger = 0
-		self.darea.connect("draw", self.on_draw)
+		self.darea.connect("draw", self.draw)
 		css_provider = Gtk.CssProvider()
 		css_provider.load_from_path("./style.css")
 
@@ -208,7 +267,9 @@ class Paint(Gtk.Window):
 		
 
 		
-		self.darea.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+		self.darea.set_events(self.darea.get_events() |
+            Gdk.EventMask.BUTTON_PRESS_MASK |
+            Gdk.EventMask.POINTER_MOTION_MASK)
 		self.add(self.darea)
 
 		self.coords = []
@@ -222,26 +283,65 @@ class Paint(Gtk.Window):
 		self.connect("delete-event", Gtk.main_quit)
 
 		self.darea.connect("button-press-event", self.on_button_press)
-		self.show_all()
+		self.darea.connect("motion-notify-event", self.mouse_move)
 
+		self.show_all()
 		a = self.darea.get_allocation()
 
 		print (a.x, a.y, a.width, a.height)
-		self.img = cairo.ImageSurface(2, a.width, a.height)
 
+		self.img = cairo.ImageSurface(5, a.width, a.height)
+
+	def draw(self,w,cr):
+		cr.set_source_surface(self.img, 0, 0)
+		cr.paint()
+
+	def mouse_move(self, w, e):
+		if (self.win.function != 0):
+			return
+		cr = cairo.Context(self.img)
+		if e.state & Gdk.EventMask.BUTTON_PRESS_MASK:
+			curr_brush = self.brushes[-1]
+			curr_brush.add_point((e.x, e.y))
+			cr.set_line_cap(0)
+			self.on_draw(w,cr)
+			# w.queue_draw()
 
 	def on_draw(self, wid, cr):
 		cr.set_source_surface(self.img, 0, 0)
 		cr.paint()
-		
+		if self.win.function != 0:
+			return
+		color = self.win.rgba
+		rgba_color = (color.red,color.green,color.blue,color.alpha)
+		cr.set_source_rgba(*rgba_color)
+
+		for brush in self.brushes[::-1]: 
+			# cr.set_source_rgba(*brush.rgba_color)
+			cr.set_line_width(brush.width)
+			cr.set_line_cap(1)
+			cr.set_line_join(cairo.LINE_JOIN_ROUND)
+			cr.new_path()
+			
+			for x, y in brush.stroke:
+				cr.line_to(x, y)
+			cr.stroke()
+			break
+		self.darea.queue_draw()
+
 
 	def line_draw(self, wid, cr,e):
-
-		cr.set_source_rgb(255,0,0)
+		if self.win.function != 1:
+			return
 		cr.set_line_width(2)
+		color = self.win.rgba
+		rgba_color = (color.red,color.green,color.blue,color.alpha)
+		cr.set_source_rgba(*rgba_color)
+
 		self.coords.append([e.x, e.y])
 		if len(self.coords) >= 2:
 			for i in range(0, len(self.coords) - 1):
+				# i = - 2
 				j = i + 1
 				c1 = self.coords[i]
 				c2 = self.coords[j]
@@ -257,9 +357,9 @@ class Paint(Gtk.Window):
 	def draw_circle(self, widget, cr,radius):
 		cr.set_source_surface(self.img, 0, 0)
 		cr.set_line_width(2)
-		cr.set_source_rgb(255, 0, 0)
-		# w = self.allocation["width"]
-		# h = self.allocation["height"]
+		color = self.win.rgba
+		rgba_color = (color.red,color.green,color.blue,color.alpha)
+		cr.set_source_rgba(*rgba_color)
 		
 		cr.translate(self.coords[-1][0], self.coords[-1][1])
 		cr.arc(0, 0, radius, 0, 2*math.pi)
@@ -275,7 +375,9 @@ class Paint(Gtk.Window):
 		print(self.coords)
 		
 		cr.set_source_surface(self.img, 0, 0)
-		cr.set_source_rgb(0,0,0)
+		color = self.win.rgba
+		rgba_color = (color.red,color.green,color.blue,color.alpha)
+		cr.set_source_rgba(*rgba_color)
 		cr.set_line_width(2)
 		sx,sy = self.coords[-1]
 		cr.translate(sx,sy)
@@ -289,16 +391,26 @@ class Paint(Gtk.Window):
 			and e.button == MouseButtons.LEFT_BUTTON:
 			cr = cairo.Context(self.img)
 			
-			if (self.win.function == 1):
+			if (self.win.function == 0):
+				color = self.win.rgba
+				rgba_color = (color.red,color.green,color.blue,color.alpha)
+				cr.set_source_rgba(*rgba_color)
+				print(rgba_color)
+				brush = Brush(2, rgba_color)
+				brush.add_point((e.x, e.y))
+				self.brushes.append(brush)
+				self.on_draw(w,cr)
+				# w.queue_draw()
+			if (self.win.function == 2):
 				self.coords = []
 				self.coords.append([e.x, e.y])
 				self.inpC.action(w,cr,self.draw_circle)
-			elif (self.win.function == 2):
+			elif (self.win.function == 3):
 				self.coords = []
 				self.coords.append([e.x, e.y])
 				print(self.coords)
 				self.inpR.action(w,cr,self.draw_rectangle)
-			elif (self.win.function == 0):
+			elif (self.win.function == 1):
 				self.line_draw(w, cr,e)
 
 

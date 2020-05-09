@@ -25,19 +25,20 @@ flight(paris,toulouse,united,40,30).
 %correctly_gives Torronto to Valencia
 
 
-query(A,B,D,E,A - B) :- flight(A,B,C,D,E).
-query(A,B,D+R,E + T,A - Y) :- flight(A,Z,C,D,E), query(Z,B,R,T,Y).
+%query(A,B,D,E,A - B) :- flight(A,B,C,D,E).
+%query(A,B,D+R,E + T,A - Y) :- flight(A,Z,C,D,E), query(Z,B,R,T,Y).
 
 
 
 %incorrect -> gives repeated routes also when querried for Valencia to Torronto
 
+%goes to infinite repeating paths 
 
-%checkFlight(A,B,C,D,E) :- flight(A,B,C,D,E) ->flight(A,B,C,D,E);flight(B,A,C,D,E).
+checkFlight(A,B,C,D,E) :- flight(A,B,C,D,E) ; flight(B,A,C,D,E).
 
-%query(A,B,D,E,A - B) :- checkFlight(A,B,C,D,E);
+query(A,B,D,E,A - B) :- checkFlight(A,B,C,D,E).
 
-%query(A,B,D+R,E + T,A - Y) :- checkFlight(A,Z,C,D,E), query(Z,B,R,T,Y).
+query(A,B,D+R,E + T,A - Y) :- checkFlight(A,Z,C,D,E), query(Z,B,R,T,Y).
 
 
 
