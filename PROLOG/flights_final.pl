@@ -22,6 +22,8 @@ flight(madrid,malaga,iberia,50,30).
 flight(malaga,valencia,iberia,80,120).
 flight(paris,toulouse,united,40,30).
 
+
+
 %flight(london,torronto,united,650,420).
 %flight(london,torronto,air_canada,500,360).
 %flight(madrid,torronto,air_canada,900,480).
@@ -36,11 +38,12 @@ flight(paris,toulouse,united,40,30).
 %flight(valencia,malaga,iberia,80,120).
 %flight(toulouse,paris,united,40,30).
 
-%correctly_gives Torronto to Valencia
 
 
 query(A,B,D,E,A - B) :- flight(A,B,C,D,E).
 query(A,B,D + R,E + T,A - Y) :- flight(A,Z,C,D,E), query(Z,B,R,T,Y).
+
+find(A,B,C,D,E) :- query(A,B,C,D,E) ; query(B,A,C,D,E).
 
 
 %query (b) -> must produce all the cities with the airport tax in dollars and the minimum security delay in minutes. 
