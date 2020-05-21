@@ -18,7 +18,7 @@ print("""
         2. Unblock Websites
         Enter 1/2 :
         """)
-x = input()
+x = int(input())
 if x == 1:
     with open(hosts_path, 'r+') as file: 
         content = file.read() 
