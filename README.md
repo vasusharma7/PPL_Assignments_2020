@@ -1,4 +1,12 @@
-# PPL_Assignments_2020
+# PPL Project Link 
+
+  https://github.com/vasusharma7/Project-EVA
+
+# PPL Assignments 2020
+
+  - MIS - 111803127
+  - Name - Vasu Shamra
+  - SY Comp Div 2
 
 ## Python_1 - Assignment 1
   Contains various python scripts - like guessing game, goat-river-man problem/puzzle etc/
